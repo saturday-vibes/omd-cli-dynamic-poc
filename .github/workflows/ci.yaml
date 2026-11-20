@@ -31,3 +31,4 @@ jobs:
           node dist/bin/omd.js schema versions
           node dist/bin/omd.js schema show --kind service
           node dist/bin/omd.js schema show --kind component --version v1.0.0 | head -3
+          node dist/bin/omd.js validate test/repos/service-catalog-backstage --skip-backstage --repo wbd-streaming/service-catalog-backstage --format text

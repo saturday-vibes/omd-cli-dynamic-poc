@@ -4,6 +4,7 @@ import { Command, CommanderError, Option } from 'commander';
 import { listFields } from './fields';
 import type { Kind } from './registry';
 import { kinds, packageName, Registry, UsageError } from './registry';
+import { runValidate, type ValidateFlags } from './validate';
 
 export type Result = { exitCode: number; stdout: string; stderr: string };
 
@@ -15,6 +16,7 @@ function version(): string {
 }
 
 export async function runCli(argv: string[], registry: Registry = new Registry()): Promise<Result> {
+  let exitCode = 0;
   let stdout = '';
   let stderr = '';
   const print = (text: string) => (stdout += text.endsWith('\n') ? text : `${text}\n`);
@@ -64,9 +66,25 @@ export async function runCli(argv: string[], registry: Registry = new Registry()
       }
     });
 
+  program
+    .command('validate')
+    .description('Validate a repository .omd folder, or one now.yaml, including the action Backstage rules.')
+    .argument('[path]', 'repository root or one now.yaml')
+    .addOption(new Option('--format <format>', 'output format').choices(['json', 'text']).default('json'))
+    .addOption(new Option('--no-download', 'fail instead of downloading a schema version that is not cached'))
+    .addOption(new Option('--skip-backstage', 'JSON Schema only. Skips the Backstage lookups the action runs.'))
+    .addOption(new Option('--repo <owner/name>', 'repository slug for name and uniqueness checks. Defaults to GITHUB_REPOSITORY, then the git remote.'))
+    .addOption(new Option('--backstage-url <url>', 'Backstage base URL. Defaults to OMD_BACKSTAGE_URL.'))
+    .action(async (target: string | undefined, flags: ValidateFlags) => {
+      const outcome = await runValidate(target ?? process.cwd(), flags, registry);
+      stdout += outcome.stdout;
+      stderr += outcome.stderr;
+      exitCode = outcome.exitCode;
+    });
+
   try {
     await program.parseAsync(argv);
-    return { exitCode: 0, stdout, stderr };
+    return { exitCode, stdout, stderr };
   } catch (error) {
     if (error instanceof CommanderError) {
       return { exitCode: error.exitCode === 0 ? 0 : 2, stdout, stderr };

@@ -35,7 +35,19 @@ export type JsonSchema = {
   items?: JsonSchema;
 };
 
-export type Schema = { kind: Kind; version: string; packageName: string; schema: JsonSchema };
+export type Schema = {
+  kind: Kind;
+  version: string;
+  packageName: string;
+  schema: JsonSchema;
+  /** `cache`: already on disk. `downloaded`: npm install ran for this call. */
+  source: 'cache' | 'downloaded';
+};
+
+export type LoadOptions = {
+  /** When false, a version that is not already cached is a usage error. */
+  download?: boolean;
+};
 
 export type RegistryOptions = {
   /** Defaults to `$OMD_CACHE_DIR`, else `~/.omd-cli/schemas`. */
@@ -71,13 +83,17 @@ export class Registry {
   }
 
   /** One version (latest when omitted), from the cache or installed into it. */
-  async load(kind: Kind, version?: string): Promise<Schema> {
+  async load(kind: Kind, version?: string, options: LoadOptions = {}): Promise<Schema> {
     if (version !== undefined && !SEMVER.test(version)) {
       throw new UsageError(`Invalid schema version: ${version}. Expected X.Y.Z or vX.Y.Z`);
     }
     const wanted = version?.replace(/^v/, '') ?? (await this.versions(kind))[0];
     if (!wanted) {
       throw new UsageError(`No ${kind} schemas are published`);
+    }
+    const cached = fs.existsSync(path.join(this.cacheDir, kind, wanted, 'package.json'));
+    if (!cached && options.download === false) {
+      throw new UsageError(`${kind} schema ${wanted} is not cached. Run without --no-download to fetch it.`);
     }
     const dir = await this.install(kind, wanted);
     const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')) as {
@@ -89,7 +105,7 @@ export class Registry {
       throw new Error(`${dir} holds ${manifest.name}@${manifest.version}, expected ${packageName(kind)}@${wanted}`);
     }
     const schema = JSON.parse(fs.readFileSync(path.join(dir, manifest.main ?? 'index.json'), 'utf8')) as JsonSchema;
-    return { kind, version: wanted, packageName: manifest.name, schema };
+    return { kind, version: wanted, packageName: manifest.name, schema, source: cached ? 'cache' : 'downloaded' };
   }
 
   private async install(kind: Kind, version: string): Promise<string> {

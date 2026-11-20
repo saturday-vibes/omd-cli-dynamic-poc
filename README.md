@@ -13,7 +13,12 @@ yarn install && yarn build
 node dist/bin/omd.js schema versions
 node dist/bin/omd.js schema show --kind service                    # latest
 node dist/bin/omd.js schema show --kind component --version v1.4.4
+node dist/bin/omd.js validate test/repos/service-catalog-backstage --skip-backstage --repo wbd-streaming/service-catalog-backstage
 ```
+
+`validate` checks a repository `.omd` folder, or one `now.yaml`, against the schema
+version that file declares. The schema is downloaded on first use. Backstage
+lookups run unless `--skip-backstage` is set. `--no-download` uses the cache only.
 
 ## How it works
 
