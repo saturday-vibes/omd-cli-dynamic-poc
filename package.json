@@ -1,0 +1,36 @@
+{
+  "name": "@test-org-th/omd-cli-dynamic-poc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "POC: an OMD CLI that downloads schema packages at runtime instead of depending on them",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saturday-vibes/omd-cli-dynamic-poc.git"
+  },
+  "bin": {
+    "omd": "dist/bin/omd.js"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.0",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.15",
+    "typescript": "~5.9.3"
+  },
+  "packageManager": "yarn@4.5.3",
+  "engines": {
+    "node": ">=24"
+  }
+}
